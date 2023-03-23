@@ -3,13 +3,12 @@
   {%- set identifier = model['alias'] -%}
   {%- set grant_config = config.get('grants') -%}
 
-  {%- set partition_by = config.get('partition_by') -%}
   -- the partition_by should be a list of columns, such as: ['updated_date', 'group']
-  {%- set partition_by = partition_by if partition_by is iterable else [] -%}
+  {%- set partition_by = config.get('partition_by') -%}
   -- if partition_by is a list and not null, then build the partitionBy statement for pyspark,
-  -- the statement will look like: `.partitionBy("updated_date', 'group")`
+  -- the statement will look like: `.partitionBy("updated_date", "group")`
   -- else the statement will be empty string
-  {%- set partition_stmt = partition_by | join("', '") | trim | prepend(".partitionBy('") | append("')") if partition_by else '' -%}
+  {%- set partition_stmt = partition_by | join('", "') | string | trim | prepend('By("') | append('")') if partition_by else '' -%}
 
 
   {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
@@ -101,7 +100,7 @@ else:
   msg = f"{type(df)} is not a supported type for dbt Python materialization"
   raise Exception(msg)
 
-df.write{{partition_stmt}}.mode("overwrite").format("delta").option("overwriteSchema", "true").saveAsTable("{{ target_relation }}")
+df.write{{ partition_stmt }}.mode("overwrite").format("delta").option("overwriteSchema", "true").saveAsTable("{{ target_relation }}")
 {%- endmacro -%}
 
 {%macro py_script_comment()%}
